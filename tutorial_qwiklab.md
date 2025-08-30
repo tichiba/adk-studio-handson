@@ -7,9 +7,7 @@
 ### このラボの内容
 *   ADK Studioの基本的なセットアップ方法を理解する。
 *   ADK Studioを使用して、GUIベースでAIエージェントを構築する方法を学ぶ。
-*   作成したエージェントをテストし、動作を確認する。
-*   （応用）A2A (Agent-to-Agent)連携の概念を理解し、ローカルでエージェントサーバーを起動する方法を学ぶ。
-*   （応用）複数のエージェントを連携させる方法を学ぶ。
+*   （応用）A2A (Agent-to-Agent)連携の概念を理解し、複数のエージェントを連携させる方法を学ぶ。
 
 ## **Part 1: ADK Studioのセットアップ**
 
@@ -19,23 +17,20 @@
 
 1.  Cloud Shellを起動し、ターミナルを開きます。
 
-2.  `gcloud`コマンドで、使用するGoogle Cloudプロジェクトを設定します。`YOUR_PROJECT_ID`の部分はご自身のプロジェクトIDに置き換えてください。
+2.  `gsutil`コマンドを使い、GCSからハンズオン用のスクリプトと資材をダウンロードします。
     ```bash
-    gcloud config set project YOUR_PROJECT_ID
-    ```
-
-3.  `gsutil`コマンドを使い、GCSからハンズオン用のスクリプトと資材をダウンロードします。
-    ```bash
+    cd ~
     gsutil -m cp -r gs://gcj-ai-agent-handson-part3/ ./
+    cd ./gcj-ai-agent-handson-part3
     ```
 
-4.  ダウンロードした`setup.sh`スクリプトを実行します。このスクリプトは、ADKやその他必要なライブラリのインストール、環境設定を自動で行います。
+3.  ダウンロードした`setup.sh`スクリプトを実行します。このスクリプトは、ADKやその他必要なライブラリのインストール、環境設定を自動で行います。
     ```bash
     bash setup.sh
     ```
     スクリプトの完了には数分かかる場合があります。`Setup complete!`というメッセージが表示されれば成功です。
 
-5.  **【重要】** `pnpm`コマンドをシステムに認識させるため、以下のコマンドを実行してシェルの設定を再読み込みしてください。
+4.  以下のコマンドを実行してシェルの設定を再読み込みしてください。
     ```bash
     source ~/.bashrc
     ```
@@ -62,10 +57,15 @@
 
 ADK StudioのGUIを使って、Web検索機能を持つ`ResearchAgent`を作成します。
 
-1.  ADK Studio画面右上の `+ Add New` ボタンをクリックし、`+ Blank Agent` を選択します。
+1. ADK Studioのサイドバーから `Workflows` を選択します。
+
+2. 画面右上の `+ Add New` ボタンをクリックし、`+ Blank Workflow` を選択します。
 
 2.  中央に表示された `RootAgent` をクリックし、右側のPropertiesパネルに以下の情報を入力します。
-    *   **description**: `あなたは高度なリサーチエージェントです。`
+    *   **description**: 
+        ```
+        あなたは高度なリサーチエージェントです。
+        ```
     *   **instruction**:
         ```
         あなたは高度なリサーチエージェントです。与えられた検索クエリに基づき、`GoogleSearchAgentTool`と`URLFetchAgentTool`を使用してウェブ検索,Webからのデータ抽出を実行してください。検索結果から関連性の高い情報を複数抽出し、それらを統合・要約して、クエリに対する包括的な「回答の草案」を生成してください。出典のURLも必ず含めてください。
@@ -75,10 +75,16 @@ ADK StudioのGUIを使って、Web検索機能を持つ`ResearchAgent`を作成�
 
 1.  `GoogleSearchAgentTool` を作成します。
     *   左上の `+` ボタンから `Agent` をドラッグ＆ドロップでキャンバスに追加します。
-    *   `RootAgent` の `uses tool` の口から、新しいAgentの入力口へ線を繋ぎます。
+    *   `RootAgent` にマウスカーソルを合わせると表示される + ボタンをクリックし、新しく追加したAgentへ線を繋ぎます。
     *   新しいAgentをクリックし、Propertiesパネルを以下のように設定します。
-        *   **Name**: `GoogleSearchAgentTool`
-        *   **description**: `GoogleSearchToolを使用してウェブ検索を行い、結果とソースを詳細に出力するエージェントツールです。`
+        *   **Name**:
+            ```
+            GoogleSearchAgentTool
+            ```
+        *   **description**:
+            ```
+            GoogleSearchToolを使用してウェブ検索を行い、結果とソースを詳細に出力するエージェントツールです。
+            ```
         *   **instruction**:
             ```
             あなたは優秀なリサーチアシスタントです。与えられたクエリに対して、Google SearchToolを使用してウェブ検索を実行してください。そして、結果から得られた情報を、要約したり元の情報を変更したりせずに、できるだけ詳細に報告してください。すべての情報について、出典のURLを明記してください。複数の出典からの情報を組み合わせる場合は、それぞれの情報がどの出典からのものかが明確にわかるように記述してください。
@@ -89,24 +95,37 @@ ADK StudioのGUIを使って、Web検索機能を持つ`ResearchAgent`を作成�
     *   左上の `+` ボタンから `Tool` を追加します。
     *   `GoogleSearchAgentTool` から新しいToolへ線を繋ぎます。
     *   新しいToolのPropertiesを以下のように設定します。
-        *   **Label**: `GoogleSearchTool`
-        *   **Tool Type**: `Built-in Tool`
-        *   **Built-in Tool**: `Google Search`
+        *   **Name**:
+        ```
+        GoogleSearchTool
+        ```
+        *   **Tool Type**: `Built-in Tool` を選択
+        *   **Built-in Tool**: `Google Search` を選択
 
 ## タスク 5: URLFetchツールの作成と保存
 
 1.  同様の手順で `URLFetchAgentTool` と `URLFetchTool` を作成します。
     *   **URLFetchAgentTool (Agent)**:
-        *   `Enable AgentTool` をオンにすることを忘れないでください。
-        *   **description**: `URLFetchToolを使用してウェブページへのアクセスを行い、結果とソースを詳細に出力するエージェントツールです。`
+        *   **Name**:
+            ```
+            URLFetchAgentTool
+            ```
+        *   **description**:
+            ```
+            URLFetchToolを使用してウェブページへのアクセスを行い、結果とソースを詳細に出力するエージェントツールです。
+            ```
         *   **instruction**:
             ```
             あなたは優秀なリサーチアシスタントです。与えられたURL、またはURLFetchToolを使用して、そのURLのウェブページにアクセスしてください。そして、結果から得られた情報を、要約したり元の情報を変更したりせずに、できるだけ詳細に報告してください。すべての情報について、出典のURLを明記してください。複数の出典からの情報を組み合わせる場合は、それぞれの情報がどの出典からのものかが明確にわかるように記述してください。
             ```
+        *   **`Enable AgentTool` のチェックボックスをオンにします。**
     *   **URLFetchTool (Tool)**:
-        *   **Label**: `URLFetchTool`
-        *   **Tool Type**: `Built-in Tool`
-        *   **Built-in Tool**: `URL Context`
+        *   **Name**:
+            ```
+            URLFetchTool
+            ```
+        *   **Tool Type**: `Built-in Tool` を選択
+        *   **Built-in Tool**: `URL Context` を選択
 
 2.  右上の `Save` ボタンを押し、プロジェクト名を `Research Agent` として保存します。
 
@@ -135,7 +154,7 @@ ADK Studioで生成したコードを元に、A2A連携用のエージェント�
 
 1.  Cloud ShellのEditorに戻ります。
 
-2.  `sandbox/agents/research/agent.py` を開き、ADK Studioの `Generated Code` タブに表示されているPythonコードをすべてコピー＆ペーストします。
+2.  `~/gcj-ai-agent-handson-part3/sandbox/agents/research/agent.py` を開き、ADK Studioの `Generated Code` タブに表示されているPythonコードをすべてコピー＆ペーストします。
 
 3.  `agent.py` の末尾に、以下の2行を追加します。
     ```python
@@ -145,7 +164,7 @@ ADK Studioで生成したコードを元に、A2A連携用のエージェント�
 
 4.  新しいターミナルを開き、以下のコマンドを実行して、ローカルでA2Aサーバーを起動します。`YOUR_PROJECT_ID`はご自身のものに置き換えてください。
     ```bash
-    cd sandbox
+    cd ~/gcj-ai-agent-handson-part3/sandbox
     export GOOGLE_GENAI_USE_VERTEXAI=TRUE
     export GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID
     export GOOGLE_CLOUD_LOCATION=global
@@ -154,7 +173,7 @@ ADK Studioで生成したコードを元に、A2A連携用のエージェント�
 
 5.  さらに別のターミナルを開き、以下のコマンドでAgent Cardが取得できることを確認します。
     ```bash
-    curl localhost:8888/.well-known/agent-card.json
+    curl localhost:8888/.well-known/agent-card.json | jq
     ```
     JSON形式の情報が表示されれば、サーバーは正常に動作しています。
 
@@ -162,10 +181,13 @@ ADK Studioで生成したコードを元に、A2A連携用のエージェント�
 
 A2Aサーバーとして起動した`ResearchAgent`をツールとして利用する、新しい「関西弁エージェント」を作成します。
 
-1.  ADK Studioに戻り、`+ Add new` -> `Blank Agent` で新しいエージェントを作成します。
+1.  ADK Studioに戻り、`+ Add new` -> `Blank Workflow` で新しいエージェントを作成します。
 
 2.  `RootAgent` の設定を以下のように変更します。
-    *   **Desctipiton**: `あなたは関西弁を喋るResearch Agent です。`
+    *   **Desctipiton**:
+        ```
+        あなたは関西弁を喋るResearch Agent です。
+        ```
     *   **Instruction**:
         ```
         あなたは関西弁を喋るResearch Agent です。ResearchAgentToolを使いこなし、ユーザーから質問に対して、検索を行い、関西弁で受け答えをしてください。
@@ -174,13 +196,19 @@ A2Aサーバーとして起動した`ResearchAgent`をツールとして利用�
 3.  `ResearchAgentTool` を作成します。
     *   左上の `+` ボタンから `Agent` を追加し、`RootAgent`と接続します。
     *   新しいAgentのPropertiesを以下のように設定します。
-        *   **Label**: `ResarchAgentTool`
-        *   **Agent Type**: `Remote A2A Agent`
-        *   **Description**: `クエリに基づいて検索/Webページへのアクセスを行うAgent`
+        *   **Name**:
+            ```
+            ResarchAgentTool
+            ```
+        *   **Agent Type**: `Remote A2A Agent` を選択「
+        *   **Description**:
+            ```
+            クエリに基づいて検索/Webページへのアクセスを行うAgent
+            ```
         *   **Agent Card URL**: `http://localhost:8888/.well-known/agent-card.json`
         *   **`Enable AgentTool` のチェックボックスをオンにします。**
 
-4.  プロジェクトをSaveし、`Generate Code` -> `Preview` で動作を確認します。先ほどと同じ質問をすると、今度は関西弁で回答が返ってくるはずです。
+4.  `Save` ボタンを押し、プロジェクト名を `Naniwa Agent` として保存します。、`Generate Code` -> `Preview` で動作を確認します。先ほどと同じ質問をすると、今度は関西弁で回答が返ってくるはずです。
 
 ---
 
